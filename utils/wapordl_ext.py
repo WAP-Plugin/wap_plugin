@@ -609,6 +609,8 @@ def wapor_dl(region, variable,
     ## Check l3_region code.
     if level == "L3" and isinstance(l3_region, type(None)):
         l3_region = guess_l3_region(region_shape)
+        if not region_code:
+            region_code = ''
         region_code += f".{l3_region}"
 
     ## Check the dates in period.

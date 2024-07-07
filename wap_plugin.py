@@ -96,6 +96,14 @@ class DownloadThread(QRunnable):
         self.signals = WorkerSignals()
 
     def downloadFromWapordl(self, region, mapset, folder, file_name, period):
+        print('==='*15)
+        print('Processing wapor_map')
+        print('Parameters:')
+        print('> region: ', region)
+        print('> variable: ', mapset)
+        print('> file_name: ', file_name)
+        print('> period: ', period)
+        print('==='*15)
         return wapor_map(region=region, variable=mapset, folder=folder,
                          file_name=file_name, period=period, seperate_unscale=True)
 
