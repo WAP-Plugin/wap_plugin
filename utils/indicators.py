@@ -20,6 +20,9 @@ from qgis.core import QgsRasterLayer
 
 from qgis.PyQt.QtWidgets import QMessageBox
 
+# import rasterio as rio
+# import rioxarray as riox
+
 """
     '<NAME_INDICATOR>' : {
         'info' : '<FORMULA_TO_COMPUTE_THE_INDICATOR>',
@@ -51,25 +54,24 @@ from qgis.PyQt.QtWidgets import QMessageBox
 """
 
 INDICATORS_INFO = {
-                    # 'Equity' : {
-                    #     'info' : 'equity = (sd_raster / mean_raster) * 100',
-                    #     'rasters' : {
-                    #         'AETI' : 'Actual Evapotranspiration and Interception',
-                    #         'PE' : 'Potential Evapotranspitarion'
-                    #         # 'ACB' : 'Name of ACB'
-                    #     },
-                    #     'factors' : {
-                    #         'sd_raster' : 'Standard deviation obtained from the Raster',
-                    #         'mean_raster' : 'Mean obtained from the Raster'
-                    #     },
-                    #     'params' : {
-                    #         'PARAM_1' : {'label':'AETI or PE', 'type': ['AETI','PE']},
-                    #         'PARAM_2' : '',
-                    #         'PARAM_3' : ''
-                    #     }
-                    # },
+                    'Uniformity of Water Consumption' : {
+                        'info' : 'Equity is defined as the coefficients of variation (CV) of seasonal ETa in the area of interest.  \
+                                  equity = (sd_raster / mean_raster) * 100',
+                        'rasters' : {
+                            'AETI' : 'Actual Evapotranspiration and Interception'
+                        },
+                        'factors' : {
+                            'sd_raster' : 'Standard deviation obtained from the Raster',
+                            'mean_raster' : 'Mean obtained from the Raster'
+                        },
+                        'params' : {
+                            'PARAM_1' : {'label':'AETI', 'type': ['AETI']},
+                            'PARAM_2' : '',
+                            'PARAM_3' : ''
+                        }
+                    },
                     'Beneficial Fraction' : {
-                        'info' : 'BF = (AETI / T)',
+                        'info' : 'BF = (T / AETI)',
                         'rasters' : {
                             'AETI' : 'Actual Evapotranspiration and Interception',
                             'T' : 'Transpiration'
@@ -78,85 +80,85 @@ INDICATORS_INFO = {
                             # 'Conversion Factor' : '0.1'
                         },
                         'params' : {
-                            'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
-                            'PARAM_2' : {'label':'T Raster', 'type': ['T']},
+                            'PARAM_1' : {'label':'T Raster', 'type': ['T']},
+                            'PARAM_2' : {'label':'AETI Raster', 'type': ['AETI']},
                             'PARAM_3' : ''
                         }
                     },
-                    'Adequacy' : {
-                        'info' : 'AD = (AETI / (Kc * RET))',
+                    'Adequacy (Relative Evapotranspiration)' : {
+                        'info' : 'AD = (ETa / ETp)',
                         'rasters' : {
-                            'AETI' : 'Actual Evapotranspiration and Interception',
-                            'RET' : 'Reference Evapotranspiration'
+                            'ETa' : 'Actual Evapotranspiration and Interception',
+                            'ETp' : '95th percentile of AETI '
                         },
                         'factors' : {
-                            'Kc' : 'A constant to compute Potential Evapotranspiration'
+                            # 'Kc' : 'A constant to compute Potential Evapotranspiration'
                         },
                         'params' : {
                             'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
-                            'PARAM_2' : {'label':'RET Raster', 'type': ['RET']},
-                            'PARAM_3' : 'Kc'
+                            'PARAM_2' : '',
+                            'PARAM_3' : ''
                         }
                     },
-                    # 'Relative Water Deficit' : {
-                    #     'info' : 'RWD = 1 - (AETI / ETx)',
+                    'Relative Water Deficit' : {
+                        'info' : 'RWD = 1 - (AETI / ETx)',
+                        'rasters' : {
+                            'AETI' : 'Actual Evapotranspiration and Interception'
+                        },
+                        'factors' : {
+                            'ETx' : '99 percentile of the Raster'
+                        },
+                        'params' : {
+                            'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
+                            'PARAM_2' : '',
+                            'PARAM_3' : ''
+                        }
+                    },
+                    # 'Overall Consumed Ratio' : {
+                    #     'info' : 'OCR = (AETI - PCP) / V_ws',
                     #     'rasters' : {
-                    #         'AETI' : 'Actual Evapotranspiration and Interception'
+                    #         'AETI' : 'Actual Evapotranspiration and Interception',
+                    #         'PCP' : 'Precipitation'
                     #     },
                     #     'factors' : {
-                    #         'ETx' : '99 percentile of the Raster'
+                    #         'V_ws' : 'Volume of water supplied to command area in mm.'
                     #     },
                     #     'params' : {
                     #         'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
-                    #         'PARAM_2' : '',
-                    #         'PARAM_3' : ''
+                    #         'PARAM_2' : {'label':'PCP Raster', 'type': ['PCP']},
+                    #         'PARAM_3' : 'V_ws'
                     #     }
                     # },
-                    'Overall Consumed Ratio' : {
-                        'info' : 'OCR = (AETI - PCP) / V_ws',
-                        'rasters' : {
-                            'AETI' : 'Actual Evapotranspiration and Interception',
-                            'PCP' : 'Precipitation'
-                        },
-                        'factors' : {
-                            'V_ws' : 'Volume of water supplied to command area in mm.'
-                        },
-                        'params' : {
-                            'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
-                            'PARAM_2' : {'label':'PCP Raster', 'type': ['PCP']},
-                            'PARAM_3' : 'V_ws'
-                        }
-                    },
-                    'Field Application Ratio (efficiency)' : {
-                        'info' : 'FAR = (AETI - PCP) / V_wd',
-                        'rasters' : {
-                            'AETI' : 'Actual Evapotranspiration and Interception',
-                            'PCP' : 'Precipitation'
-                        },
-                        'factors' : {
-                            'V_wd' : 'Volume of water delivered to field(s) in mm.'
-                        },
-                        'params' : {
-                            'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
-                            'PARAM_2' : {'label':'PCP Raster', 'type': ['PCP']},
-                            'PARAM_3' : 'V_wd'
-                        }
-                    },
-                    'Depleted Fraction' : {
-                        'info' : 'DF = 1 - AETI / (PCP + V_c)',
-                        'rasters' : {
-                            'AETI' : 'Actual Evapotranspiration and Interception',
-                            'PCP' : 'Precipitation'
-                        },
-                        'factors' : {
-                            'V_c' : 'Volume of water consumed in mm.'
-                        },
-                        'params' : {
-                            'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
-                            'PARAM_2' : {'label':'PCP Raster', 'type': ['PCP']},
-                            'PARAM_3' : 'V_c'
-                        }
-                    }
+                    # 'Field Application Ratio (efficiency)' : {
+                    #     'info' : 'FAR = (AETI - PCP) / V_wd',
+                    #     'rasters' : {
+                    #         'AETI' : 'Actual Evapotranspiration and Interception',
+                    #         'PCP' : 'Precipitation'
+                    #     },
+                    #     'factors' : {
+                    #         'V_wd' : 'Volume of water delivered to field(s) in mm.'
+                    #     },
+                    #     'params' : {
+                    #         'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
+                    #         'PARAM_2' : {'label':'PCP Raster', 'type': ['PCP']},
+                    #         'PARAM_3' : 'V_wd'
+                    #     }
+                    # },
+                    # 'Depleted Fraction' : {
+                    #     'info' : 'DF = 1 - AETI / (PCP + V_c)',
+                    #     'rasters' : {
+                    #         'AETI' : 'Actual Evapotranspiration and Interception',
+                    #         'PCP' : 'Precipitation'
+                    #     },
+                    #     'factors' : {
+                    #         'V_c' : 'Volume of water consumed in mm.'
+                    #     },
+                    #     'params' : {
+                    #         'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
+                    #         'PARAM_2' : {'label':'PCP Raster', 'type': ['PCP']},
+                    #         'PARAM_3' : 'V_c'
+                    #     }
+                    # }
                   }
 
 class IndicatorCalculator:
@@ -200,20 +202,28 @@ class IndicatorCalculator:
         ds = gdal.Open(ras_atei_dir)
         atei_band1 = ds.GetRasterBand(1).ReadAsArray()
         atei_band1 = atei_band1.astype(np.float64)
+        # Removing values that contain no data value 
         atei_band1[atei_band1 == -9999] = float('nan')
         AETIm   = np.nanmean(atei_band1)
         AETIsd  = np.nanstd(atei_band1)
 
         equity = (AETIsd / AETIm) * 100
-        
-        print("Equity for the given Raster is: ", equity)
-        outLabel.setText('Equity {}'.format(equity))
 
-    def beneficial_fraction(self, aeti_dir, ta_dir, output_name):
+        if equity < 10:
+            U = 'Good Uniformity'
+        elif 10 <= equity < 25:
+            U = 'Fair Uniformity'
+        else:
+            U = 'Poor Uniformity'
+
+        print('CV of AETI in', raster, '=', round(equity, 1), ',', U)
+        # print("Equity for the given Raster is: ", equity)
+        outLabel.setText('CV of AETI in {} = {}, {}'.format(raster, round(equity, 1), U))
+
+    def beneficial_fraction(self, ta_dir, aeti_dir, output_name):
         """
-        [FORMULA PASSED THE TEST WITH TRUE VALUES]
         Beneficial fraction is computed from the formula:
-        --- BF = (AETI / TA)
+        --- BF = (TA / AETI)
         --- Resolution: Continental, National, Sub-national 
         where:
             -- AETI - (raster) - Actual Evapotranspiration and Interception 
@@ -248,7 +258,7 @@ class IndicatorCalculator:
         ras.bandNumber = 1
         entries.append(ras)
 
-        calc = QgsRasterCalculator('ras@1 / ras@2',
+        calc = QgsRasterCalculator('ras@2 / ras@1',
                                     output_dir,
                                     'GTiff',
                                     ras_atei.extent(),
@@ -257,33 +267,64 @@ class IndicatorCalculator:
                                     entries)
         print(calc.processCalculation())
 
-    def adequacy(self, aeti_dir, ret_dir, output_name, Kc=1.25):
+    # def beneficial_fraction_new(self, aeti_dir, ta_dir, output_name):
+    #     """
+    #     Beneficial fraction is computed from the formula:
+    #     --- BF = (T / ET)
+    #     --- Resolution: Continental, National, Sub-national 
+    #     where:
+    #         -- AETI - (raster) - Actual Evapotranspiration and Interception 
+    #         --- Raster Types: AETI (annual, dekadal)
+    #         --- Conversion Factor: 0.1
+    #         -- TA - (raster) - Mean obtained from a Raster
+    #             --- Raster Types: TA (annual, dekadal)
+    #             --- Conversion Factor: 0.1
+    #     --- Units: decimal or percentage(*100)
+
+    #     Output:
+    #     --- BF - Raster
+    #     """
+    #     ras_atei_dir = os.path.join(self.rasters_dir, aeti_dir)
+    #     ras_ta_dir = os.path.join(self.rasters_dir, ta_dir)
+    #     output_dir = os.path.join(self.rasters_dir, output_name)
+
+    #     T = riox.open_rasterio(ras_ta_dir)
+    #     AETI = riox.open_rasterio(ras_atei_dir)
+    #     T_over_AETI = T / AETI
+    #     T_over_AETI.rio.to_raster(output_dir)
+        
+    #     entries = []
+
+    def adequacy(self, aeti_dir, output_name):
         """
         [FORMULA PASSED THE TEST WITH TRUE VALUES]
         Adequacy is computed from the formula:
-        --- AD = (AETI / PET)
+        --- AD = (ETa / ETp)
         --- Resolution: Continental
         where:
-            -- AETI - (raster) - Actual Evapotranspiration and Interception 
+            -- ETa - (raster) - Actual Evapotranspiration and Interception 
             --- Raster Types: AETI (annual, monthly, dekadal)
-            --- Conversion Factor: 0.1
-            -- PET - (raster) - Potential Evapotranspiration 
-            --- Formula: PET = Kc * RET
-            --- Kc (real number) - provided by the user
-        --- RET (raster) Reference Evapotranspiration
-                --- Raster Types: RET (annual, monthly, dekadal)
-                --- Conversion Factor: 0.1
+            -- ETp - (raster) - 95th percentile of AETI 
         --- Units: decimal or percentage(*100)
 
         Output:
         --- AD - Raster
         """
         ras_atei_dir = os.path.join(self.rasters_dir, aeti_dir)
-        ras_ret_dir = os.path.join(self.rasters_dir, ret_dir)
         output_dir = os.path.join(self.rasters_dir, output_name)
 
         ras_atei = QgsRasterLayer(ras_atei_dir)
-        ras_ret = QgsRasterLayer(ras_ret_dir)
+
+        ds = gdal.Open(ras_atei_dir)
+        atei_band1 = ds.GetRasterBand(1).ReadAsArray()
+        atei_band1 = atei_band1.astype(np.float64)
+        atei_band1[atei_band1 == -9999] = float('nan')
+        AETI1_1D  = np.reshape(atei_band1,  atei_band1.shape[0] * atei_band1.shape[1])
+
+        ETp = np.nanpercentile(AETI1_1D, 99)
+        # ETp_value = np.nanpercentile(atei_band1, 95)
+        # ETp = np.full_like(atei_band1, ETp_value)
+        # ETp  = np.reshape(ETp,  atei_band1.shape[0] * atei_band1.shape[1])
 
         entries = []
 
@@ -293,13 +334,7 @@ class IndicatorCalculator:
         ras.bandNumber = 1
         entries.append(ras)
 
-        ras = QgsRasterCalculatorEntry()
-        ras.ref = 'ras@2'
-        ras.raster = ras_ret
-        ras.bandNumber = 1
-        entries.append(ras)
-
-        calc = QgsRasterCalculator('(ras@1) / ({} * {})'.format('ras@2', str(Kc)),
+        calc = QgsRasterCalculator('(ras@1) / {}'.format(ETp),
                                     output_dir,
                                     'GTiff',
                                     ras_atei.extent(),
@@ -309,7 +344,7 @@ class IndicatorCalculator:
         print(calc.processCalculation())
 
 
-    def relative_water_deficit(self, aeti_dir, output_name):
+    def relative_water_deficit(self, aeti_dir, output_name, outLabel):
         """
         [FORMULA PASSED THE TEST WITH TRUE VALUES]
         Relative water deficit is computed from the formula:
@@ -334,11 +369,17 @@ class IndicatorCalculator:
 
         ds = gdal.Open(ras_atei_dir)
         atei_band1 = ds.GetRasterBand(1).ReadAsArray()
-        atei_band1 = atei_band1.astype(np.float)
+        atei_band1 = atei_band1.astype(np.float64)
         atei_band1[atei_band1 == -9999] = float('nan')
-        AETI1_1D  = np.reshape(atei_band1,  atei_band1.shape[0] * atei_band1.shape[1])
 
-        ETx = np.nanpercentile(AETI1_1D * 0.1, 99)
+        AETI1_1D  = np.reshape(atei_band1,  atei_band1.shape[0] * atei_band1.shape[1])
+        ETx = np.nanpercentile(AETI1_1D, 95)
+
+        AETI_mean = np.nanmean(atei_band1)
+
+        RWD = 1 - (AETI_mean / ETx)
+        outLabel.setText('Relative water deficit {} = {}'.format(aeti_dir, round(RWD, 2)))
+
         print(ETx)
 
         entries = []
