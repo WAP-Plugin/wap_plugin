@@ -104,8 +104,19 @@ class DownloadThread(QRunnable):
         print('> file_name: ', file_name)
         print('> period: ', period)
         print('==='*15)
+        if('-E' in mapset):
+            unit = "day"
+        elif('-D' in mapset):
+            unit = "dekad"
+        elif('-M' in mapset):
+            unit = "month"
+        elif ('-A' in mapset):
+            unit = "year"
+        else:
+            unit = "none"
         return wapor_map(region=region, variable=mapset, folder=folder,
-                         file_name=file_name, period=period, seperate_unscale=True)
+                         file_name=file_name, period=period,
+                         seperate_unscale=True, unit_conversion=unit)
 
     @pyqtSlot()
     def run(self):
@@ -326,7 +337,7 @@ class WAPlugin:
 
         if self.isWapor2:  
             v = 2
-            profile_url = 'https://wapor.apps.fao.org/profile'
+            profile_url = 'https://wapor.apps.fao.org/profile/deprecated'
             instructions_url = r'https://github.com/WAGIS/wap_plugin/wiki/Login-to-database'
         else:
             v = 3
