@@ -116,7 +116,7 @@ class DownloadThread(QRunnable):
             unit = "none"
         return wapor_map(region=region, variable=mapset, folder=folder,
                          file_name=file_name, period=period,
-                         seperate_unscale=True, unit_conversion=unit)
+                         separate_unscale=True, unit_conversion=unit)
 
     @pyqtSlot()
     def run(self):
@@ -330,10 +330,10 @@ class WAPlugin:
         box_text = '''<html><head/><body><p>In order to have access to the WaPOR 
              v{} resources, you sould provide the API Token associated to your 
             <a href="{}"><span style=" text-decoration: underline; color:#0000ff
-            ;">account</span></a>. In case you do not have one or do not know 
-            how to get the API Token, please refer to the instructions in our <a 
-            href="{}"><span style=" text-decoration: underline; color:#0000ff;">
-            GitHub Repository</span></a>.</p></body></html>'''
+            ;">account</span></a> (Google currently not working). In case you 
+            do not have one or do not know how to get the API Token, please refer 
+            to the instructions in our <a href="{}"><span style=" text-decoration: 
+            underline; color:#0000ff;"> GitHub Repository</span></a>.</p></body></html>'''
 
         if self.isWapor2:  
             v = 2
@@ -509,7 +509,7 @@ class WAPlugin:
         self.mapsets = self.api3_manag.pull_mapsets(self.workspace3)
 
         self.dlg.mapsetComboBox.clear()
-        self.dlg.mapsetComboBox.addItems(self.mapsets.keys())
+        self.dlg.mapsetComboBox.addItems(sorted(self.mapsets.keys()))
         self.dlg.mapsetComboBox.setEnabled(True)
 
     def mapsetChange(self):
