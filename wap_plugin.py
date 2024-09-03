@@ -1112,6 +1112,7 @@ class WAPlugin:
 
         if self.indicator_key == 'Uniformity of Water Consumption' or \
             self.indicator_key == 'Adequacy (Relative Evapotranspiration)' or \
+            self.indicator_key == 'Total Biomass Production' or \
             self.indicator_key == 'Relative Water Deficit':
             requirementsFlag = True if param1_name != '' else False
         if self.indicator_key == 'Beneficial Fraction' or \
@@ -1152,6 +1153,10 @@ class WAPlugin:
             self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Relative Water Deficit':
             self.indic_calc.relative_water_deficit(param1_name, output_name, outLabel=self.dlg.outputIndicValue)
+            self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Total Biomass Production':
+            output_name = self.dlg.outputIndicName.text()+"_TBP.tif"
+            self.indic_calc.total_biomass_production(param1_name, output_name, outLabel=self.dlg.outputIndicValue)
             self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Overall Consumed Ratio':
             try:

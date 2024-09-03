@@ -114,6 +114,20 @@ INDICATORS_INFO = {
                             'PARAM_3' : ''
                         }
                     },
+                    'Total Biomass Production' : {
+                        'info' : """Net Primary Production can be used to estimate total biomass production using the following formula:  \n TBP = (NPP * 22.22)/1000 
+                        \n The value 22.222 is to convert the NPP in gC/m^2 to biomass production in kg/ha. To convert to ton/ha the value is divided by 1000.""",
+                        'rasters' : {
+                            'NPP' : 'Net Primary Production'
+                        },
+                        'factors' : {
+                        },
+                        'params' : {
+                            'PARAM_1' : {'label':'NPP Raster', 'type': ['NPP']},
+                            'PARAM_2' : '',
+                            'PARAM_3' : ''
+                        }
+                    },
                     # 'Overall Consumed Ratio' : {
                     #     'info' : 'OCR = (AETI - PCP) / V_ws',
                     #     'rasters' : {
@@ -397,6 +411,51 @@ class IndicatorCalculator:
                                     ras_atei.height(),
                                     entries)
         print(calc.processCalculation())
+
+    def total_biomass_production(self, raster, output_name, outLabel):
+        """
+        TBP is computed from the formula:
+            --- TBP = (NPP * 22.22)/1000
+            where:
+                -- NPP - Net Primary Production
+                -- 22.222 is to convert the NPP in gC/m^2 to biomass production in kg/ha
+                -- To convert to ton/ha the value is divided by 1000
+        Output:
+        --- mean & standard deviation - real number
+        --- Total Biomass Production - raster
+        """
+        ras_npp_dir = os.path.join(self.rasters_dir, raster)
+        output_dir = os.path.join(self.rasters_dir, output_name)
+
+        ds = gdal.Open(ras_npp_dir)
+        ras_npp = QgsRasterLayer(ras_npp_dir)
+
+        npp_band1 = ds.GetRasterBand(1).ReadAsArray()
+        npp_band1 = npp_band1.astype(np.float64)
+        # Removing values that contain no data value 
+        npp_band1[npp_band1 == -9999] = float('nan')
+
+        NPPm   = np.nanmean(npp_band1)
+        NPPsd  = np.nanstd(npp_band1)
+
+        entries = []
+        ras = QgsRasterCalculatorEntry()
+        ras.ref = 'ras@1'
+        ras.raster = ras_npp
+        ras.bandNumber = 1
+        entries.append(ras)
+
+        calc = QgsRasterCalculator('(ras@1 * 22.22) / 1000',
+                                    output_dir,
+                                    'GTiff',
+                                    ras_npp.extent(),
+                                    ras_npp.width(),
+                                    ras_npp.height(),
+                                    entries)
+        print(calc.processCalculation())
+
+        print('The mean and standard deviation for', raster, '=', round(NPPm, 1), ',', round(NPPsd, 1))
+        outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(NPPm, 1), round(NPPsd, 1)))
 
     def overall_consumed_ratio(self, aeti_dir, pcp_dir, output_name, V_ws):
         """
