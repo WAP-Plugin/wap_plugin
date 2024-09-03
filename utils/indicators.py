@@ -128,6 +128,21 @@ INDICATORS_INFO = {
                             'PARAM_3' : ''
                         }
                     },
+                    'Biomass Water Productivity' : {
+                        'info' : """It is defined as the total biomass production divided by the AETI:  \n WPb = TBP/AETI * 100
+                        \n The multiplication with 100 is needed to correct the units, first convert TBP in ton/ha to kg/m^2 (divide by 10) and then AETI from mm/season to m/season (divide by 1000) so that the final unit of WPb is kg/m^3.""",
+                        'rasters' : {
+                            'AETI' : 'Actual Evapotranspiration and Interception',
+                            'TBP' : 'Total Biomass Productionn'
+                        },
+                        'factors' : {
+                        },
+                        'params' : {
+                            'PARAM_1' : {'label':'AETI Raster', 'type': ['AETI']},
+                            'PARAM_2' : {'label':'TBP Raster', 'type': ['TBP']},
+                            'PARAM_3' : ''
+                        }
+                    },
                     # 'Overall Consumed Ratio' : {
                     #     'info' : 'OCR = (AETI - PCP) / V_ws',
                     #     'rasters' : {
@@ -412,6 +427,8 @@ class IndicatorCalculator:
                                     entries)
         print(calc.processCalculation())
 
+
+
     def total_biomass_production(self, raster, output_name, outLabel):
         """
         TBP is computed from the formula:
@@ -430,13 +447,12 @@ class IndicatorCalculator:
         ds = gdal.Open(ras_npp_dir)
         ras_npp = QgsRasterLayer(ras_npp_dir)
 
-        npp_band1 = ds.GetRasterBand(1).ReadAsArray()
-        npp_band1 = npp_band1.astype(np.float64)
-        # Removing values that contain no data value 
-        npp_band1[npp_band1 == -9999] = float('nan')
+        npp_band1 = self._get_array(ds)
 
-        NPPm   = np.nanmean(npp_band1)
-        NPPsd  = np.nanstd(npp_band1)
+        TBP = (npp_band1 * 22.222) / 1000
+
+        TBPm   = np.nanmean(TBP)
+        TBPsd  = np.nanstd(TBP)
 
         entries = []
         ras = QgsRasterCalculatorEntry()
@@ -454,8 +470,65 @@ class IndicatorCalculator:
                                     entries)
         print(calc.processCalculation())
 
-        print('The mean and standard deviation for', raster, '=', round(NPPm, 1), ',', round(NPPsd, 1))
-        outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(NPPm, 1), round(NPPsd, 1)))
+        print('The mean and standard deviation for', raster, '=', round(TBPm, 2), ',', round(TBPsd, 2))
+        outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(TBPm, 2), round(TBPsd, 2)))
+
+    def biomass_water_productivity(self, aeti_dir, tbp_dir, output_name, outLabel):
+        """
+        TBP is computed from the formula:
+            --- TBP = (NPP * 22.22)/1000
+            where:
+                -- NPP - Net Primary Production
+                -- 22.222 is to convert the NPP in gC/m^2 to biomass production in kg/ha
+                -- To convert to ton/ha the value is divided by 1000
+        Output:
+        --- mean & standard deviation - real number
+        --- Total Biomass Production - raster
+        """
+        ras_atei_dir = os.path.join(self.rasters_dir, aeti_dir)
+        ras_tbp_dir = os.path.join(self.rasters_dir, tbp_dir)
+        output_dir = os.path.join(self.rasters_dir, output_name)
+
+        ras_atei = QgsRasterLayer(ras_atei_dir)
+        ras_tbp = QgsRasterLayer(ras_tbp_dir)
+
+        ds_aeti = gdal.Open(ras_atei_dir)
+        ds_tbp = gdal.Open(ras_tbp_dir)
+
+        aeti_band = self._get_array(ds_aeti)
+        tbp_band = self._get_array(ds_tbp)
+
+        WP  = tbp_band/aeti_band*100
+
+        NPPm   = np.nanmean(WP)
+        NPPsd  = np.nanstd(WP)
+
+        entries = []
+
+        ras = QgsRasterCalculatorEntry()
+        ras.ref = 'ras@1'
+        ras.raster = ras_atei
+        ras.bandNumber = 1
+        entries.append(ras)
+
+        ras = QgsRasterCalculatorEntry()
+        ras.ref = 'ras@2'
+        ras.raster = ras_tbp
+        ras.bandNumber = 1
+        entries.append(ras)
+
+        calc = QgsRasterCalculator('ras@2 / ras@1 * 100',
+                                    output_dir,
+                                    'GTiff',
+                                    ras_atei.extent(),
+                                    ras_atei.width(),
+                                    ras_atei.height(),
+                                    entries)
+        print(calc.processCalculation())
+
+        print('The mean and standard deviation for WP', '=', round(NPPm, 2), ',', round(NPPsd, 2))
+        outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(NPPm, 2), round(NPPsd, 2)))
+
 
     def overall_consumed_ratio(self, aeti_dir, pcp_dir, output_name, V_ws):
         """
@@ -607,6 +680,12 @@ class IndicatorCalculator:
                                     entries)
         print(calc.processCalculation())
 
-
+    def _get_array(self, ds, nan_value=-9999):
+        ras = ds.GetRasterBand(1).ReadAsArray()
+        ras = ras.astype(np.float64)
+        # Removing values that contain no data value 
+        ras[ras == nan_value] = float('nan')
+        return ras
+    
     def crop_yield(self):
         raise NotImplementedError("Indicator: 'Crop Yield' not implemented yet.")
