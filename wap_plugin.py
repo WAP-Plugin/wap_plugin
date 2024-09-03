@@ -1118,6 +1118,7 @@ class WAPlugin:
         if self.indicator_key == 'Beneficial Fraction' or \
              self.indicator_key == 'Beneficial Fraction New' or \
              self.indicator_key == 'Overall Consumed Ratio' or \
+             self.indicator_key == 'Biomass Water Productivity' or \
              self.indicator_key == 'Field Application Ratio (efficiency)' or \
              self.indicator_key == 'Depleted Fraction':
             requirementsFlag = True if param1_name != '' and param2_name != '' else False
@@ -1157,6 +1158,10 @@ class WAPlugin:
         elif self.indicator_key == 'Total Biomass Production':
             output_name = self.dlg.outputIndicName.text()+"_TBP.tif"
             self.indic_calc.total_biomass_production(param1_name, output_name, outLabel=self.dlg.outputIndicValue)
+            self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Biomass Water Productivity':
+            output_name = self.dlg.outputIndicName.text()+"_WPb.tif"
+            self.indic_calc.biomass_water_productivity(param1_name, param2_name, output_name, outLabel=self.dlg.outputIndicValue)
             self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Overall Consumed Ratio':
             try:
