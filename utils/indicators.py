@@ -498,8 +498,12 @@ class IndicatorCalculator:
         aeti_band = self._get_array(ds_aeti)
         tbp_band = self._get_array(ds_tbp)
 
-        WP  = tbp_band/aeti_band*100
-
+        try:
+            WP  = tbp_band/aeti_band*100
+        except ValueError:
+            outLabel.setText('Error: The two Rasters have different sizes!')
+            return 0
+        
         NPPm   = np.nanmean(WP)
         NPPsd  = np.nanstd(WP)
 

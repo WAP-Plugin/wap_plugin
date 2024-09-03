@@ -1161,8 +1161,12 @@ class WAPlugin:
             self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Biomass Water Productivity':
             output_name = self.dlg.outputIndicName.text()+"_WPb.tif"
-            self.indic_calc.biomass_water_productivity(param1_name, param2_name, output_name, outLabel=self.dlg.outputIndicValue)
-            self.canv_manag.add_rast(output_name)
+            result = self.indic_calc.biomass_water_productivity(param1_name, param2_name, output_name, outLabel=self.dlg.outputIndicValue)
+            # Added return because if there is error in the calculation, 
+            # output raster will not be calculated and therefore cannot load to canvas.
+            # TODO: This is a quick fix and has to be replaced with a concrete solution
+            if not result==0:
+                self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Overall Consumed Ratio':
             try:
                 param3_name = float(self.dlg.Param3TextBox.text())
