@@ -606,10 +606,26 @@ class WAPlugin:
 
         if INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'] == '':
             self.dlg.Param3Label.setText('Not Required')
+            self.dlg.Param3TextBox.setText("")
+            self.dlg.Param3TextBox_2.setText("")
+            self.dlg.Param3TextBox_3.setText("")
+            self.dlg.Param3TextBox_4.setText("")
+            self.dlg.Param3TextBox.setPlaceholderText("")
+            self.dlg.Param3TextBox_2.setPlaceholderText("")
+            self.dlg.Param3TextBox_3.setPlaceholderText("")
+            self.dlg.Param3TextBox_4.setPlaceholderText("")
             self.dlg.Param3TextBox.setEnabled(False)
+            self.dlg.Param3TextBox_2.setEnabled(False)
+            self.dlg.Param3TextBox_3.setEnabled(False)
+            self.dlg.Param3TextBox_4.setEnabled(False)
         else:
-            self.dlg.Param3Label.setText(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'])
-            self.dlg.Param3TextBox.setEnabled(True)
+            self.dlg.Param3Label.setText('Other Parameters')
+            param_list = [self.dlg.Param3TextBox, self.dlg.Param3TextBox_2, self.dlg.Param3TextBox_3, self.dlg.Param3TextBox_4]
+            for i, param in enumerate(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3']):
+                param_list[i].setPlaceholderText(param)
+                param_list[i].setEnabled(True)
+            # self.dlg.Param3Label.setText(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'])
+            # self.dlg.Param3TextBox.setEnabled(True)
 
         self.dlg.indicInfoLabel.setText(''.join(raster_info))
 
@@ -1113,6 +1129,7 @@ class WAPlugin:
         if self.indicator_key == 'Uniformity of Water Consumption' or \
             self.indicator_key == 'Adequacy (Relative Evapotranspiration)' or \
             self.indicator_key == 'Total Biomass Production' or \
+            self.indicator_key == 'Yield' or \
             self.indicator_key == 'Relative Water Deficit':
             requirementsFlag = True if param1_name != '' else False
         if self.indicator_key == 'Beneficial Fraction' or \
@@ -1164,9 +1181,22 @@ class WAPlugin:
             result = self.indic_calc.biomass_water_productivity(param1_name, param2_name, output_name, outLabel=self.dlg.outputIndicValue)
             # Added return because if there is error in the calculation, 
             # output raster will not be calculated and therefore cannot load to canvas.
-            # TODO: This is a quick fix and has to be replaced with a concrete solution
+            # TODO: Adding return 0 is a quick fix and has to be replaced with a concrete solution
             if not result==0:
                 self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Yield':
+            output_name = self.dlg.outputIndicName.text()+"_Y.tif"
+            try:
+                MC = float(self.dlg.Param3TextBox.text())
+                fc = float(self.dlg.Param3TextBox_2.text())
+                AOT = float(self.dlg.Param3TextBox_3.text())
+                HI = float(self.dlg.Param3TextBox_4.text())
+            except ValueError:
+                print("Parameters are not real numbers.")
+                self.dlg.outputIndicValue.setText('ERROR: Parameters must be real numbers!')
+                return
+            self.indic_calc.yield_indicator(param1_name, MC, fc, AOT, HI, output_name, outLabel=self.dlg.outputIndicValue)
+            self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Overall Consumed Ratio':
             try:
                 param3_name = float(self.dlg.Param3TextBox.text())

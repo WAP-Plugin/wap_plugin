@@ -143,6 +143,19 @@ INDICATORS_INFO = {
                             'PARAM_3' : ''
                         }
                     },
+                    'Yield' : {
+                        'info' : """Yield Y = HI * AOT * fc * (TBP / (1 - MC)) \n MC: moisture content, dry matter over fresh biomass \n fc: Light use efficiency correction factor \n AOT: above ground over total biomass production ratio(AOT) \n HI: Harvest Index""",
+                        'rasters' : {
+                            'TBP' : 'Total Biomass Productionn'
+                        },
+                        'factors' : {
+                        },
+                        'params' : {
+                            'PARAM_1' : {'label':'TBP Raster', 'type': ['TBP']},
+                            'PARAM_2' : '',
+                            'PARAM_3' : ['MC', 'fc', 'AOT', 'HI']
+                        }
+                    },
                     # 'Overall Consumed Ratio' : {
                     #     'info' : 'OCR = (AETI - PCP) / V_ws',
                     #     'rasters' : {
@@ -475,15 +488,15 @@ class IndicatorCalculator:
 
     def biomass_water_productivity(self, aeti_dir, tbp_dir, output_name, outLabel):
         """
-        TBP is computed from the formula:
-            --- TBP = (NPP * 22.22)/1000
+        WPb is computed from the formula:
+            --- WPb = TBP/AETI * 100
             where:
-                -- NPP - Net Primary Production
-                -- 22.222 is to convert the NPP in gC/m^2 to biomass production in kg/ha
-                -- To convert to ton/ha the value is divided by 1000
+                -- TBP - Total Biomass Production
+                -- The multiplication with 100 is needed to correct the units, first convert TBP in ton/ha to kg/m^2 (divide by 10) and then AETI 
+                -- from mm/season to m/season (divide by 1000) so that the final unit of WPb is kg/m^3
         Output:
         --- mean & standard deviation - real number
-        --- Total Biomass Production - raster
+        --- Biomass Water Productivity - raster
         """
         ras_atei_dir = os.path.join(self.rasters_dir, aeti_dir)
         ras_tbp_dir = os.path.join(self.rasters_dir, tbp_dir)
@@ -532,6 +545,50 @@ class IndicatorCalculator:
 
         print('The mean and standard deviation for WP', '=', round(NPPm, 2), ',', round(NPPsd, 2))
         outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(NPPm, 2), round(NPPsd, 2)))
+
+    def yield_indicator(self, raster, MC, fc, AOT, HI, output_name, outLabel):
+        """
+        TBP is computed from the formula:
+            --- TBP = (NPP * 22.22)/1000
+            where:
+                -- NPP - Net Primary Production
+                -- 22.222 is to convert the NPP in gC/m^2 to biomass production in kg/ha
+                -- To convert to ton/ha the value is divided by 1000
+        Output:
+        --- mean & standard deviation - real number
+        --- Total Biomass Production - raster
+        """
+        ras_TBP_dir = os.path.join(self.rasters_dir, raster)
+        output_dir = os.path.join(self.rasters_dir, output_name)
+
+        ds = gdal.Open(ras_TBP_dir)
+        ras_npp = QgsRasterLayer(ras_TBP_dir)
+
+        tbp_band1 = self._get_array(ds)
+
+        YIELD = HI * AOT * fc * (tbp_band1 / (1 - MC))
+
+        Yieldm   = np.nanmean(YIELD)
+        Yieldsd  = np.nanstd(YIELD)
+
+        entries = []
+        ras = QgsRasterCalculatorEntry()
+        ras.ref = 'ras@1'
+        ras.raster = ras_npp
+        ras.bandNumber = 1
+        entries.append(ras)
+
+        calc = QgsRasterCalculator('{} * {} * {} * (ras@1 / (1 - {}))'.format(HI, AOT, fc, MC),
+                                    output_dir,
+                                    'GTiff',
+                                    ras_npp.extent(),
+                                    ras_npp.width(),
+                                    ras_npp.height(),
+                                    entries)
+        print(calc.processCalculation())
+
+        print('The mean and standard deviation for', raster, '=', round(Yieldm, 2), ',', round(Yieldsd, 2))
+        outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(Yieldm, 2), round(Yieldsd, 2)))
 
 
     def overall_consumed_ratio(self, aeti_dir, pcp_dir, output_name, V_ws):
