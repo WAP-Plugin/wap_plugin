@@ -258,9 +258,9 @@ class IndicatorCalculator:
         else:
             U = 'Poor Uniformity'
 
-        print('CV of AETI in', raster, '=', round(equity, 1), ',', U)
+        print('Uniformity in this region is =', round(equity, 1), ',', U)
         # print("Equity for the given Raster is: ", equity)
-        outLabel.setText('CV of AETI in {} = {}, {}'.format(raster, round(equity, 1), U))
+        outLabel.setText('Uniformity in this region is = {}, {}   '.format(round(equity, 1), U))
 
     def beneficial_fraction(self, ta_dir, aeti_dir, output_name):
         """

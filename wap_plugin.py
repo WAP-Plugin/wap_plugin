@@ -328,7 +328,7 @@ class WAPlugin:
         self.isWapor2 = self.dlg.wapor2radioButton.isChecked()
 
         box_text = '''<html><head/><body><p>In order to have access to the WaPOR 
-             v{} resources, you sould provide the API Token associated to your 
+             v{} datasets, you should provide the API Token associated to your 
             <a href="{}"><span style=" text-decoration: underline; color:#0000ff
             ;">account</span></a> (Google currently not working). In case you 
             do not have one or do not know how to get the API Token, please refer 
@@ -633,6 +633,9 @@ class WAPlugin:
             self.dlg.outputIndicName.setEnabled(False)
         else:
             self.dlg.outputIndicName.setEnabled(True)
+        
+        self.dlg.outputIndicValue.setText("")
+
 
     def showDetails(self):
         """
