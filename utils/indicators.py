@@ -156,6 +156,21 @@ INDICATORS_INFO = {
                             'PARAM_3' : ['MC', 'fc', 'AOT', 'HI']
                         }
                     },
+                    'Crop Water Productivity' : {
+                        'info' : """It is defined as the yield divided by the AETI:  \n cWP = Y/AETI * 100
+                        \n The multiplication with 100 is to correct the units to kg/m3 (from AETI in mm/season and TBP in ton/ha) .""",
+                        'rasters' : {
+                            'Y' : 'Yield',
+                            'AETI' : 'Actual Evapotranspiration and Interception'
+                        },
+                        'factors' : {
+                        },
+                        'params' : {
+                            'PARAM_1' : {'label':'Y Raster', 'type': ['Y']},
+                            'PARAM_2' : {'label':'AETI Raster', 'type': ['AETI']},
+                            'PARAM_3' : ''
+                        }
+                    },
                     # 'Overall Consumed Ratio' : {
                     #     'info' : 'OCR = (AETI - PCP) / V_ws',
                     #     'rasters' : {
@@ -590,6 +605,65 @@ class IndicatorCalculator:
         print('The mean and standard deviation for', raster, '=', round(Yieldm, 2), ',', round(Yieldsd, 2))
         outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(Yieldm, 2), round(Yieldsd, 2)))
 
+    def crop_water_productivity(self, y_dir, aeti_dir, output_name, outLabel):
+        """
+        cWP is computed from the formula:
+            --- cWP = Y/AETI * 100
+            where:
+                -- Y -  (raster) - Yield
+                -- AETI - (raster) - Actual Evapotranspiration and Interception 
+                -- The multiplication with 100 is to correct the units to kg/m3 (from AETI in mm/season and TBP in ton/ha) 
+        Output:
+        --- mean & standard deviation - real number
+        --- Crop Water Productivity - raster
+        """
+        ras_y_dir = os.path.join(self.rasters_dir, y_dir)
+        ras_atei_dir = os.path.join(self.rasters_dir, aeti_dir)
+        output_dir = os.path.join(self.rasters_dir, output_name)
+
+        ras_y = QgsRasterLayer(ras_y_dir)
+        ras_atei = QgsRasterLayer(ras_atei_dir)
+
+        ds_y = gdal.Open(ras_y_dir)
+        ds_aeti = gdal.Open(ras_atei_dir)
+
+        y_band = self._get_array(ds_y)
+        aeti_band = self._get_array(ds_aeti)
+
+        try:
+            cWP  = y_band/aeti_band*100
+        except ValueError:
+            outLabel.setText('Error: The two Rasters have different sizes!')
+            return 0
+        
+        cWPm   = np.nanmean(cWP)
+        cWPsd  = np.nanstd(cWP)
+
+        entries = []
+
+        ras = QgsRasterCalculatorEntry()
+        ras.ref = 'ras@1'
+        ras.raster = ras_y
+        ras.bandNumber = 1
+        entries.append(ras)
+
+        ras = QgsRasterCalculatorEntry()
+        ras.ref = 'ras@2'
+        ras.raster = ras_atei
+        ras.bandNumber = 1
+        entries.append(ras)
+
+        calc = QgsRasterCalculator('ras@1 / ras@2 * 100',
+                                    output_dir,
+                                    'GTiff',
+                                    ras_atei.extent(),
+                                    ras_atei.width(),
+                                    ras_atei.height(),
+                                    entries)
+        print(calc.processCalculation())
+
+        print('The mean and standard deviation for cWP', '=', round(cWPm, 2), ',', round(cWPsd, 2))
+        outLabel.setText('mean = {}, \nstandard deviation = {}'.format(round(cWPm, 2), round(cWPsd, 2)))
 
     def overall_consumed_ratio(self, aeti_dir, pcp_dir, output_name, V_ws):
         """
