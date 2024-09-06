@@ -259,7 +259,7 @@ class IndicatorCalculator:
         ds = gdal.Open(ras_atei_dir)
 
         atei_band1 = self._get_array(ds)
-        
+
         AETIm   = np.nanmean(atei_band1)
         AETIsd  = np.nanstd(atei_band1)
 
@@ -561,15 +561,17 @@ class IndicatorCalculator:
 
     def yield_indicator(self, raster, MC, fc, AOT, HI, output_name, outLabel):
         """
-        TBP is computed from the formula:
-            --- TBP = (NPP * 22.22)/1000
+        Yield is computed with the formula: 
+            --- Y = HI * AOT * fc * (TBP / (1 - MC))
             where:
-                -- NPP - Net Primary Production
-                -- 22.222 is to convert the NPP in gC/m^2 to biomass production in kg/ha
-                -- To convert to ton/ha the value is divided by 1000
+                -- MC: moisture content, dry matter over fresh biomass
+                -- fc: Light use efficiency correction factor
+                -- AOT: above ground over total biomass production ratio (AOT) 
+                -- HI: Harvest Index
+                -- TBP - Total Biomass Production
         Output:
         --- mean & standard deviation - real number
-        --- Total Biomass Production - raster
+        --- Yield - raster
         """
         ras_TBP_dir = os.path.join(self.rasters_dir, raster)
         output_dir = os.path.join(self.rasters_dir, output_name)
