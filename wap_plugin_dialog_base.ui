@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>545</width>
-    <height>703</height>
+    <height>707</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1256,16 +1256,41 @@
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="8,8">
+             <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="8,4,4,4,4">
               <item>
                <widget class="QLabel" name="Param3Label">
                 <property name="text">
-                 <string>Other Constant</string>
+                 <string>Other Constants:</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="Param3TextBox"/>
+               <widget class="QLineEdit" name="Param3TextBox">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="Param3TextBox_2">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="Param3TextBox_3">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="Param3TextBox_4">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
