@@ -20,8 +20,6 @@ from qgis.core import QgsRasterLayer
 
 from qgis.PyQt.QtWidgets import QMessageBox
 
-# import rasterio as rio
-# import rioxarray as riox
 
 """
     '<NAME_INDICATOR>' : {
@@ -171,6 +169,7 @@ INDICATORS_INFO = {
                             'PARAM_3' : ''
                         }
                     },
+                    # """ Below indicators are commented out because they still have to be validated """
                     # 'Overall Consumed Ratio' : {
                     #     'info' : 'OCR = (AETI - PCP) / V_ws',
                     #     'rasters' : {
@@ -322,34 +321,6 @@ class IndicatorCalculator:
                                     ras_atei.height(),
                                     entries)
         print(calc.processCalculation())
-
-    # def beneficial_fraction_new(self, aeti_dir, ta_dir, output_name):
-    #     """
-    #     Beneficial fraction is computed from the formula:
-    #     --- BF = (T / ET)
-    #     --- Resolution: Continental, National, Sub-national 
-    #     where:
-    #         -- AETI - (raster) - Actual Evapotranspiration and Interception 
-    #         --- Raster Types: AETI (annual, dekadal)
-    #         --- Conversion Factor: 0.1
-    #         -- TA - (raster) - Mean obtained from a Raster
-    #             --- Raster Types: TA (annual, dekadal)
-    #             --- Conversion Factor: 0.1
-    #     --- Units: decimal or percentage(*100)
-
-    #     Output:
-    #     --- BF - Raster
-    #     """
-    #     ras_atei_dir = os.path.join(self.rasters_dir, aeti_dir)
-    #     ras_ta_dir = os.path.join(self.rasters_dir, ta_dir)
-    #     output_dir = os.path.join(self.rasters_dir, output_name)
-
-    #     T = riox.open_rasterio(ras_ta_dir)
-    #     AETI = riox.open_rasterio(ras_atei_dir)
-    #     T_over_AETI = T / AETI
-    #     T_over_AETI.rio.to_raster(output_dir)
-        
-    #     entries = []
 
     def adequacy(self, aeti_dir, output_name):
         """

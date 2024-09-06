@@ -624,6 +624,7 @@ class WAPlugin:
             for i, param in enumerate(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3']):
                 param_list[i].setPlaceholderText(param)
                 param_list[i].setEnabled(True)
+            """ Old code below. Kept for referense """
             # self.dlg.Param3Label.setText(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'])
             # self.dlg.Param3TextBox.setEnabled(True)
 
@@ -1165,12 +1166,6 @@ class WAPlugin:
             self.indic_calc.beneficial_fraction(param1_name, param2_name, output_name)
             self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Adequacy (Relative Evapotranspiration)':
-            # try:
-            #     param3_name = float(self.dlg.Param3TextBox.text())
-            # except ValueError:
-            #     print("Param 3 Input is not a float. Using Default value 1.25 instead")
-            #     self.dlg.Param3TextBox.setText('1.25')
-            #     param3_name = 1.25
             self.indic_calc.adequacy(param1_name, output_name)
             self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Relative Water Deficit':
