@@ -257,10 +257,9 @@ class IndicatorCalculator:
         print(ras_atei_dir)
         print(raster)
         ds = gdal.Open(ras_atei_dir)
-        atei_band1 = ds.GetRasterBand(1).ReadAsArray()
-        atei_band1 = atei_band1.astype(np.float64)
-        # Removing values that contain no data value 
-        atei_band1[atei_band1 == -9999] = float('nan')
+
+        atei_band1 = self._get_array(ds)
+        
         AETIm   = np.nanmean(atei_band1)
         AETIsd  = np.nanstd(atei_band1)
 
@@ -373,9 +372,9 @@ class IndicatorCalculator:
         ras_atei = QgsRasterLayer(ras_atei_dir)
 
         ds = gdal.Open(ras_atei_dir)
-        atei_band1 = ds.GetRasterBand(1).ReadAsArray()
-        atei_band1 = atei_band1.astype(np.float64)
-        atei_band1[atei_band1 == -9999] = float('nan')
+
+        atei_band1 = self._get_array(ds)
+
         AETI1_1D  = np.reshape(atei_band1,  atei_band1.shape[0] * atei_band1.shape[1])
 
         ETp = np.nanpercentile(AETI1_1D, 99)
@@ -425,9 +424,8 @@ class IndicatorCalculator:
         ras_atei = QgsRasterLayer(ras_atei_dir)
 
         ds = gdal.Open(ras_atei_dir)
-        atei_band1 = ds.GetRasterBand(1).ReadAsArray()
-        atei_band1 = atei_band1.astype(np.float64)
-        atei_band1[atei_band1 == -9999] = float('nan')
+
+        atei_band1 = self._get_array(ds)
 
         AETI1_1D  = np.reshape(atei_band1,  atei_band1.shape[0] * atei_band1.shape[1])
         ETx = np.nanpercentile(AETI1_1D, 95)
@@ -435,7 +433,7 @@ class IndicatorCalculator:
         AETI_mean = np.nanmean(atei_band1)
 
         RWD = 1 - (AETI_mean / ETx)
-        outLabel.setText('Relative water deficit {} = {}'.format(aeti_dir, round(RWD, 2)))
+        outLabel.setText('Relative water deficit = {}'.format(round(RWD, 2)))
 
         print(ETx)
 
@@ -819,7 +817,7 @@ class IndicatorCalculator:
         ras = ds.GetRasterBand(1).ReadAsArray()
         ras = ras.astype(np.float64)
         # Removing values that contain no data value 
-        ras[ras == nan_value] = float('nan')
+        ras[ras < 0.0] = float('nan')
         return ras
     
     def crop_yield(self):
