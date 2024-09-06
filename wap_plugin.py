@@ -96,8 +96,27 @@ class DownloadThread(QRunnable):
         self.signals = WorkerSignals()
 
     def downloadFromWapordl(self, region, mapset, folder, file_name, period):
+        print('==='*15)
+        print('Processing wapor_map')
+        print('Parameters:')
+        print('> region: ', region)
+        print('> variable: ', mapset)
+        print('> file_name: ', file_name)
+        print('> period: ', period)
+        print('==='*15)
+        if('-E' in mapset):
+            unit = "day"
+        elif('-D' in mapset):
+            unit = "dekad"
+        elif('-M' in mapset):
+            unit = "month"
+        elif ('-A' in mapset):
+            unit = "year"
+        else:
+            unit = "none"
         return wapor_map(region=region, variable=mapset, folder=folder,
-                         file_name=file_name, period=period, seperate_unscale=True)
+                         file_name=file_name, period=period,
+                         separate_unscale=True, unit_conversion=unit)
 
     @pyqtSlot()
     def run(self):
@@ -309,16 +328,16 @@ class WAPlugin:
         self.isWapor2 = self.dlg.wapor2radioButton.isChecked()
 
         box_text = '''<html><head/><body><p>In order to have access to the WaPOR 
-             v{} resources, you sould provide the API Token associated to your 
+             v{} datasets, you should provide the API Token associated to your 
             <a href="{}"><span style=" text-decoration: underline; color:#0000ff
-            ;">account</span></a>. In case you do not have one or do not know 
-            how to get the API Token, please refer to the instructions in our <a 
-            href="{}"><span style=" text-decoration: underline; color:#0000ff;">
-            GitHub Repository</span></a>.</p></body></html>'''
+            ;">account</span></a> (Google currently not working). In case you 
+            do not have one or do not know how to get the API Token, please refer 
+            to the instructions in our <a href="{}"><span style=" text-decoration: 
+            underline; color:#0000ff;"> GitHub Repository</span></a>.</p></body></html>'''
 
         if self.isWapor2:  
             v = 2
-            profile_url = 'https://wapor.apps.fao.org/profile'
+            profile_url = 'https://wapor.apps.fao.org/profile/deprecated'
             instructions_url = r'https://github.com/WAGIS/wap_plugin/wiki/Login-to-database'
         else:
             v = 3
@@ -490,7 +509,7 @@ class WAPlugin:
         self.mapsets = self.api3_manag.pull_mapsets(self.workspace3)
 
         self.dlg.mapsetComboBox.clear()
-        self.dlg.mapsetComboBox.addItems(self.mapsets.keys())
+        self.dlg.mapsetComboBox.addItems(sorted(self.mapsets.keys()))
         self.dlg.mapsetComboBox.setEnabled(True)
 
     def mapsetChange(self):
@@ -587,10 +606,27 @@ class WAPlugin:
 
         if INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'] == '':
             self.dlg.Param3Label.setText('Not Required')
+            self.dlg.Param3TextBox.setText("")
+            self.dlg.Param3TextBox_2.setText("")
+            self.dlg.Param3TextBox_3.setText("")
+            self.dlg.Param3TextBox_4.setText("")
+            self.dlg.Param3TextBox.setPlaceholderText("")
+            self.dlg.Param3TextBox_2.setPlaceholderText("")
+            self.dlg.Param3TextBox_3.setPlaceholderText("")
+            self.dlg.Param3TextBox_4.setPlaceholderText("")
             self.dlg.Param3TextBox.setEnabled(False)
+            self.dlg.Param3TextBox_2.setEnabled(False)
+            self.dlg.Param3TextBox_3.setEnabled(False)
+            self.dlg.Param3TextBox_4.setEnabled(False)
         else:
-            self.dlg.Param3Label.setText(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'])
-            self.dlg.Param3TextBox.setEnabled(True)
+            self.dlg.Param3Label.setText('Other Parameters')
+            param_list = [self.dlg.Param3TextBox, self.dlg.Param3TextBox_2, self.dlg.Param3TextBox_3, self.dlg.Param3TextBox_4]
+            for i, param in enumerate(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3']):
+                param_list[i].setPlaceholderText(param)
+                param_list[i].setEnabled(True)
+            """ Old code below. Kept for referense """
+            # self.dlg.Param3Label.setText(INDICATORS_INFO[self.indicator_key]['params']['PARAM_3'])
+            # self.dlg.Param3TextBox.setEnabled(True)
 
         self.dlg.indicInfoLabel.setText(''.join(raster_info))
 
@@ -598,6 +634,9 @@ class WAPlugin:
             self.dlg.outputIndicName.setEnabled(False)
         else:
             self.dlg.outputIndicName.setEnabled(True)
+        
+        self.dlg.outputIndicValue.setText("")
+
 
     def showDetails(self):
         """
@@ -894,7 +933,7 @@ class WAPlugin:
                 else dimensions_payload[1]["values"][0] + dimensions_payload[0]["values"][0] 
             
             print(member_frame)
-            progress_value = 20 + ((i+1)/len(dimensions2crop))*60
+            progress_value = int(20 + ((i+1)/len(dimensions2crop))*60)
             self.dlg.progressBar.setValue(progress_value)
             self.dlg.progressLabel.setText ('Downloading Raster {}/{}'.format(i+1, len(dimensions2crop)))
                 
@@ -1091,12 +1130,17 @@ class WAPlugin:
         param1_name = self.dlg.Param1ComboBox.currentText()
         param2_name = self.dlg.Param2ComboBox.currentText()
 
-        if self.indicator_key == 'Equity' or \
-           self.indicator_key == 'Relative Water Deficit':
+        if self.indicator_key == 'Uniformity of Water Consumption' or \
+            self.indicator_key == 'Adequacy (Relative Evapotranspiration)' or \
+            self.indicator_key == 'Total Biomass Production' or \
+            self.indicator_key == 'Yield' or \
+            self.indicator_key == 'Relative Water Deficit':
             requirementsFlag = True if param1_name != '' else False
         if self.indicator_key == 'Beneficial Fraction' or \
-             self.indicator_key == 'Adequacy' or \
+             self.indicator_key == 'Beneficial Fraction New' or \
              self.indicator_key == 'Overall Consumed Ratio' or \
+             self.indicator_key == 'Biomass Water Productivity' or \
+             self.indicator_key == 'Crop Water Productivity' or \
              self.indicator_key == 'Field Application Ratio (efficiency)' or \
              self.indicator_key == 'Depleted Fraction':
             requirementsFlag = True if param1_name != '' and param2_name != '' else False
@@ -1116,24 +1160,50 @@ class WAPlugin:
         output_name = self.dlg.outputIndicName.text()+".tif"
         
         print(self.indicator_key)
-        if self.indicator_key == 'Equity':
+        if self.indicator_key == 'Uniformity of Water Consumption':
             self.indic_calc.equity(raster=param1_name, outLabel=self.dlg.outputIndicValue)
         elif self.indicator_key == 'Beneficial Fraction':
             self.indic_calc.beneficial_fraction(param1_name, param2_name, output_name)
             self.canv_manag.add_rast(output_name)
-        elif self.indicator_key == 'Adequacy':
-            try:
-                param3_name = float(self.dlg.Param3TextBox.text())
-            except ValueError:
-                print("Param 3 Input is not a float. Using Default value 1.25 instead")
-                self.dlg.Param3TextBox.setText('1.25')
-                param3_name = 1.25
-                
-            self.indic_calc.adequacy(param1_name, param2_name, output_name, Kc=param3_name)
+        elif self.indicator_key == 'Adequacy (Relative Evapotranspiration)':
+            self.indic_calc.adequacy(param1_name, output_name)
             self.canv_manag.add_rast(output_name)
-        # elif self.indicator_key == 'Relative Water Deficit':
-        #     self.indic_calc.relative_water_deficit(param1_name, output_name)
-        #     self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Relative Water Deficit':
+            self.indic_calc.relative_water_deficit(param1_name, output_name, outLabel=self.dlg.outputIndicValue)
+            self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Total Biomass Production':
+            output_name = self.dlg.outputIndicName.text()+"_TBP.tif"
+            self.indic_calc.total_biomass_production(param1_name, output_name, outLabel=self.dlg.outputIndicValue)
+            self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Biomass Water Productivity':
+            output_name = self.dlg.outputIndicName.text()+"_WPb.tif"
+            result = self.indic_calc.biomass_water_productivity(param1_name, param2_name, output_name, outLabel=self.dlg.outputIndicValue)
+            # Added return because if there is error in the calculation, 
+            # output raster will not be calculated and therefore cannot load to canvas.
+            # TODO: Adding return 0 is a quick fix and has to be replaced with a concrete solution
+            if not result==0:
+                self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Yield':
+            output_name = self.dlg.outputIndicName.text()+"_Y.tif"
+            try:
+                MC = float(self.dlg.Param3TextBox.text())
+                fc = float(self.dlg.Param3TextBox_2.text())
+                AOT = float(self.dlg.Param3TextBox_3.text())
+                HI = float(self.dlg.Param3TextBox_4.text())
+            except ValueError:
+                print("Parameters are not real numbers.")
+                self.dlg.outputIndicValue.setText('ERROR: Parameters must be real numbers!')
+                return
+            self.indic_calc.yield_indicator(param1_name, MC, fc, AOT, HI, output_name, outLabel=self.dlg.outputIndicValue)
+            self.canv_manag.add_rast(output_name)
+        elif self.indicator_key == 'Crop Water Productivity':
+            output_name = self.dlg.outputIndicName.text()+"_cWP.tif"
+            result = self.indic_calc.crop_water_productivity(param1_name, param2_name, output_name, outLabel=self.dlg.outputIndicValue)
+            # Added return because if there is error in the calculation, 
+            # output raster will not be calculated and therefore cannot load to canvas.
+            # TODO: Adding return 0 is a quick fix and has to be replaced with a concrete solution
+            if not result==0:
+                self.canv_manag.add_rast(output_name)
         elif self.indicator_key == 'Overall Consumed Ratio':
             try:
                 param3_name = float(self.dlg.Param3TextBox.text())

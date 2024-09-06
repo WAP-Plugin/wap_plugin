@@ -1,5 +1,5 @@
 __pycache__/
 .vscode/settings.json
+.vscode/launch.json
 *.tif
-
 *.token

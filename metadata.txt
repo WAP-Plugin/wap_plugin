@@ -6,14 +6,14 @@
 name=WAPlugin
 qgisMinimumVersion=3.16
 description=Provides access to all the WaPOR data and includes it in the QGIS canvas as another raster layer, providing WaPOR data easy access to the QGIS users. Moreover, the water accounting and productivity component of the plugin will help the water management, providing the opportunity of calculating water accounting indicators, through the creation of maps and reports.
-version=3.0.1
+version=3.0.2
 author=WAGIS Tools & Services
 email=waplugin.qgis@gmail.com
 
 about=The water accounting and productivity plugin for QGIS platform provides access to all the WaPOR data and includes it in the QGIS canvas as another raster layer, providing WaPOR data easy access to the QGIS users. Moreover, the water accounting and productivity component of the plugin will help the water management, providing the opportunity of calculating water accounting indicators, through the creation of maps and reports.
 
 tracker=https://github.com/WAGIS/wap_plugin/issues
-repository=https://github.com/WAGIS/wap_plugin/releases/tag/v3.0.1
+repository=https://github.com/WAGIS/wap_plugin/releases/tag/v3.0.2
 # End of mandatory metadata
 
 # Recommended items:
@@ -29,7 +29,7 @@ homepage=https://github.com/WAGIS/wap_plugin
 category=Plugins
 icon=icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
