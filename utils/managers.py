@@ -173,7 +173,7 @@ class Wapor3APIManager:
         """
         pass
     
-    def query_listing(self, url):
+    def query_listing(self, urls):
         """
             Performs de listing query for an URL which will return a list of
             elements in a catalog e.g workspaces, cubes, dimensions and measures.
@@ -181,21 +181,22 @@ class Wapor3APIManager:
             ...
             Parameters
             ----------
-            params : url
-                URL to get listed from the query.
+            params : urls
+                URLs to get listed from the query.
         """
         try:
             listing = dict()
-            while url is not None:
-                try:
-                    resp = requests.get(url,timeout=self.time_out).json()
-                except:
-                    req_output = requests.get(url,timeout=self.time_out)
-                    print('Connection failed due to {}: {}'.format(req_output.reason, req_output.status_code))
-                    return -1
-                for elem in resp['response']['items']:
-                    listing[elem['caption']] = elem['code']
-                url = resp['response']['links'][-1]['href'] if resp['response']['links'][-1]['rel'] == 'next' else None
+            for url in urls:
+                while url is not None:
+                    try:
+                        resp = requests.get(url,timeout=self.time_out).json()
+                    except:
+                        req_output = requests.get(url,timeout=self.time_out)
+                        print('Connection failed due to {}: {}'.format(req_output.reason, req_output.status_code))
+                        return -1
+                    for elem in resp['response']['items']:
+                        listing[elem['caption']] = elem['code']
+                    url = resp['response']['links'][-1]['href'] if resp['response']['links'][-1]['rel'] == 'next' else None
             return listing
         except (requests.ConnectionError, requests.Timeout) as exception:
             print('requests.ConnectionError, requests.Timeout')
@@ -229,7 +230,7 @@ class Wapor3APIManager:
             Pulls all the workspaces available in the catalog.
         """
         workspaces_url = self.catalog_url+'workspaces'
-        workspaces_dict = self.query_listing(workspaces_url)
+        workspaces_dict = self.query_listing([workspaces_url])
         if workspaces_dict is None:
             self.showInternetMsg()
             return {}
@@ -260,8 +261,9 @@ class Wapor3APIManager:
         
     def pull_mapsets(self, workspace):
         mapsets_url = self.catalog_url+'workspaces/{}/mapsets'.format(workspace)
+        mosaicsets_url = self.catalog_url+'workspaces/{}/mosaicsets'.format(workspace)
         
-        mapsets_dict = self.query_listing(mapsets_url)
+        mapsets_dict = self.query_listing([mapsets_url, mosaicsets_url])
         if mapsets_dict is None:
             self.showInternetMsg()
             return {}
